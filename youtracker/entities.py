@@ -40,6 +40,7 @@ class Project(Abstract):
         self.url = "/rest/admin/project/{id}".format(id=self.id)
         self._assignees = []
         self._assignee_groups = []
+        self.issues = {}
 
     def update(self):
         params = {
@@ -81,6 +82,24 @@ class Project(Abstract):
             self._assignee_groups = []
         return self._assignee_groups
 
+    def get_issue(self, issue_id):
+        """Method for getting a specific issue for this project
+
+        Tries to get the issue from the cache on this object, but
+        otherwise will get the issue from the Youtrack server and add
+        it to the cache.
+
+        Returns:
+            An Issue object or None
+        """
+
+        if issue_id not in self.issues:
+            issue = self.connection.get_issue(issue_id)
+            if not issue:
+                return None
+            self.issues[issue_id] = issue
+        return self.issues[issue_id]
+
 
 class Issue(Abstract):
     """The class that represents all Issues in Youtrack"""
@@ -88,6 +107,14 @@ class Issue(Abstract):
     def __init__(self, connection, data, project):
         super().__init__(connection)
         self.project = project
+        self.id = data['id']
+
+    def update(self):
+        pass
+
+    def delete(self):
+        url = "/issue/{id}".format(id=self.id)
+        self.connection.delete(url)
 
 
 class WorkItem(Abstract):
